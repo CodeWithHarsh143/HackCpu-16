@@ -568,7 +568,7 @@ HackCpu-16 is being developed incrementally alongside the **Nand2Tetris** hardwa
 * [x] Automated tests
 
 ### In Progress
-* [ ] Assembler 
+* [ ] Hack Assembler 
 * [ ] Further memory-map validation
 * [ ] More complete Hack program compatibility
 * [ ] More simulator tooling
