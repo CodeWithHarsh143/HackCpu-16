@@ -41,4 +41,30 @@ InstructionType Assembler::classify(std::string line) {
 
   return InstructionType::C_INSTRUCTION;
 }
+
+C_split Assembler::C_Splitter(std::string line) {
+  std::string dest = "";
+  std::string comp = "";
+  std::string jump = "";
+  size_t n = line.size();
+  size_t i = 0;
+  while (i < n && line[i] != '=') {
+    dest += line[i++];
+  }
+  if (i == n) {
+    dest = "";
+    i = 0;
+  } else {
+    i++;
+  }
+  while (i < n && line[i] != ';') {
+    comp += line[i++];
+  }
+  i++;
+  while (i < n) {
+    jump += line[i++];
+  }
+
+  return {dest, comp, jump};
+}
 } // namespace bitforge::assembler
