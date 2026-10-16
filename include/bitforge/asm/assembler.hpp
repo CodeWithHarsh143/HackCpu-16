@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace bitforge::assembler {
 enum class InstructionType {
@@ -26,5 +28,16 @@ public:
   std::string compBits(const std::string &m);
   std::string destBits(const std::string &m);
   std::string jumpBits(const std::string &m);
+  bool isDecimal(const std::string &payload);
+  // Pass 1: record (LABEL) -> ROM address. Pass 2 helper: predefined,
+  // label, or fresh variable (allocated from 16 upward).
+  void firstPass(const std::vector<std::string> &lines);
+  int resolveSymbol(const std::string &name);
+  bool assemble(std::vector<std::string> &lines, std::vector<std::string> &out);
+
+private:
+  void initPredefined();
+  std::unordered_map<std::string, int> symbols_;
+  int nextVar_ = 16;
 };
 } // namespace bitforge::assembler
