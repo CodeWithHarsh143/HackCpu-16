@@ -1,9 +1,20 @@
 #include "bitforge/asm/assembler.hpp"
+#include "bitforge/hardware/types.hpp"
 #include <cstddef>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+
 namespace bitforge::assembler {
+
+hardware::Bits16 A_Instruction_in_bits(int addr) {
+  hardware::Bits16 b;
+  b[15] = 0;
+  addr &= 0xFFFF;
+  for (int i = 0; i < 15; i++)
+    b[i] = (addr >> i) & 1;
+  return b;
+}
 
 Assembler::Assembler() { initPredefined(); };
 
@@ -160,5 +171,43 @@ bool Assembler::isDecimal(const std::string &payload) {
   } catch (const std::out_of_range &e) {
     return false;
   }
+}
+
+namespace {
+// 15-bit value -> 15-char MSB-first string ("000000000000101" for 5).
+std::string ToBits15(int v) {
+  std::string s(15, '0');
+  for (int i = 0; i < 15; i++)
+    if (v & (1 << i))
+      s[14 - i] = '1';
+  return s;
+}
+} // namespace
+
+bool Assembler::assemble(std::vector<std::string> &lines,
+                         std::vector<std::string> &out) {
+  firstPass(lines);
+  for (size_t i = 0; i < lines.size(); i++) {
+    InstructionType type = classify(lines[i]);
+    if (type == InstructionType::A_INSTRUCTION) {
+      std::string sym = lines[i].substr(1);
+      int addr = isDecimal(sym) ? std::stoi(sym) : resolveSymbol(sym);
+      if (addr < 0 || addr > 32767)
+        return false;
+      out.push_back("0" + ToBits15(addr));
+    } else if (type == InstructionType::C_INSTRUCTION) {
+      C_split parts = C_Splitter(lines[i]);
+      std::string comp_bits = compBits(parts.comp);
+      std::string dest_bits = destBits(parts.dest);
+      std::string jump_bits = jumpBits(parts.jump);
+      if (comp_bits == "" || dest_bits == "" || jump_bits == "")
+        return false;
+      out.push_back("111" + comp_bits + dest_bits + jump_bits);
+    } else if (type == InstructionType::ERROR) {
+      return false;
+    }
+    // LABEL: emits nothing.
+  }
+  return true;
 }
 } // namespace bitforge::assembler
