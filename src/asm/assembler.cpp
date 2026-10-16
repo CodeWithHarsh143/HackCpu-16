@@ -1,10 +1,45 @@
 #include "bitforge/asm/assembler.hpp"
 #include <cstddef>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 namespace bitforge::assembler {
 
-Assembler::Assembler() {};
+Assembler::Assembler() { initPredefined(); };
+
+void Assembler::initPredefined() {
+  for (int i = 0; i <= 15; i++)
+    symbols_["R" + std::to_string(i)] = i;
+  symbols_["SP"] = 0;
+  symbols_["LCL"] = 1;
+  symbols_["ARG"] = 2;
+  symbols_["THIS"] = 3;
+  symbols_["THAT"] = 4;
+  symbols_["SCREEN"] = 16384;
+  symbols_["KBD"] = 24576;
+}
+
+void Assembler::firstPass(const std::vector<std::string> &lines) {
+  int counter = 0; // ROM address of the next A/C instruction
+  for (const std::string &line : lines) {
+    if (classify(line) == InstructionType::L_INSTRUCTION) {
+      std::string name = line.substr(1, line.size() - 2);
+      if (symbols_.find(name) == symbols_.end())
+        symbols_[name] = counter; // first definition wins
+    } else {
+      counter++; // A or C (ERROR lines counted too; writer rejects them)
+    }
+  }
+}
+
+int Assembler::resolveSymbol(const std::string &name) {
+  auto it = symbols_.find(name);
+  if (it != symbols_.end())
+    return it->second;
+  int addr = nextVar_++;
+  symbols_[name] = addr;
+  return addr;
+}
 std::string Assembler::cleanLine(std::string line) {
   if (line == "")
     return "";
@@ -71,20 +106,20 @@ C_split Assembler::C_Splitter(std::string line) {
 
 namespace {
 const std::unordered_map<std::string, std::string> kComp = {
-    {"0", "0101010"}, {"1", "0111111"},   {"-1", "0111010"},
-    {"D", "0001100"}, {"A", "0110000"},   {"!D", "0001101"},
-    {"!A", "0110001"}, {"-D", "0001111"}, {"-A", "0110011"},
+    {"0", "0101010"},   {"1", "0111111"},   {"-1", "0111010"},
+    {"D", "0001100"},   {"A", "0110000"},   {"!D", "0001101"},
+    {"!A", "0110001"},  {"-D", "0001111"},  {"-A", "0110011"},
     {"D+1", "0011111"}, {"A+1", "0110111"}, {"D-1", "0001110"},
     {"A-1", "0110010"}, {"D+A", "0000010"}, {"D-A", "0010011"},
     {"A-D", "0000111"}, {"D&A", "0000000"}, {"D|A", "0010101"},
-    {"M", "1110000"}, {"!M", "1110001"},   {"-M", "1110011"},
+    {"M", "1110000"},   {"!M", "1110001"},  {"-M", "1110011"},
     {"M+1", "1110111"}, {"M-1", "1110010"}, {"D+M", "1000010"},
     {"D-M", "1010011"}, {"M-D", "1000111"}, {"D&M", "1000000"},
     {"D|M", "1010101"},
 };
 const std::unordered_map<std::string, std::string> kDest = {
-    {"", "000"},   {"M", "001"},  {"D", "010"}, {"MD", "011"},
-    {"A", "100"},  {"AM", "101"}, {"AD", "110"}, {"AMD", "111"},
+    {"", "000"},  {"M", "001"},  {"D", "010"},  {"MD", "011"},
+    {"A", "100"}, {"AM", "101"}, {"AD", "110"}, {"AMD", "111"},
 };
 const std::unordered_map<std::string, std::string> kJump = {
     {"", "000"},    {"JGT", "001"}, {"JEQ", "010"}, {"JGE", "011"},
@@ -105,5 +140,25 @@ std::string Assembler::destBits(const std::string &m) {
 }
 std::string Assembler::jumpBits(const std::string &m) {
   return Lookup(kJump, m);
+}
+
+bool Assembler::isDecimal(const std::string &payload) {
+  try {
+    size_t pos;
+    int n = std::stoi(payload, &pos, 10);
+
+    if (pos != payload.size())
+      return false;
+
+    if (n < 0 || n > 32767)
+      return false;
+
+    return true;
+
+  } catch (const std::invalid_argument &e) {
+    return false;
+  } catch (const std::out_of_range &e) {
+    return false;
+  }
 }
 } // namespace bitforge::assembler
