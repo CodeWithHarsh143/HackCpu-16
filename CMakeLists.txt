@@ -384,3 +384,30 @@ target_link_libraries(
     PRIVATE
     SDL3::SDL3
 )
+
+# BitForge Assembler
+# ============================================================
+
+add_executable(
+    bitforge_assembler
+
+    apps/assembler/main.cpp
+
+    src/asm/assembler.cpp
+)
+
+target_include_directories(
+    bitforge_assembler
+    PRIVATE
+    ${BITFORGE_INCLUDE_DIR}
+)
+
+target_link_libraries(
+    bitforge_assembler
+    PRIVATE
+)
+
+add_test(
+    NAME bitforge_assembler
+    COMMAND bitforge_assembler
+)
