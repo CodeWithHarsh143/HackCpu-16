@@ -1,6 +1,0 @@
-@16
-D=D+1
-@LOOP
-(LOOP)
-@16
-D;JMP

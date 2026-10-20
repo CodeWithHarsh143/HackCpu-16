@@ -566,13 +566,8 @@ HackCpu-16 is being developed incrementally alongside the **Nand2Tetris** hardwa
 * [x] SDL3 display
 * [x] Hack assembler
 * [x] Automated tests
-
-### In Progress
-* [ ] Hack Assembler 
-* [ ] Further memory-map validation
-* [ ] More complete Hack program compatibility
-* [ ] More simulator tooling
-* [ ] Additional integration tests
+* [x] Hack Assembler 
+* [x] Additional integration tests
 
 ---
 
